@@ -75,6 +75,8 @@ class notifi:
             datas.append(article)
 
         # converts to json and prints it
+
+        # we can convert this datas to output as txt file or dynamic data 
         j=json.dumps(datas,indent=2)
         print("\nDatas converted to JSON and printin it.....\n\n")
         print(j)
