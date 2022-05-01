@@ -1,7 +1,7 @@
 # importing libraries 
 import requests
 from bs4 import BeautifulSoup
-
+import json
 
 # website 
 url = "https://www.freethink.com/articles"
@@ -15,43 +15,101 @@ headers = {
 'DNT' : '1', # Do Not Track Request Header
 'Connection' : 'close'
 }
-
-class notifi:
-    def article():
-        article=[0]
+class notifi:     
+    def check(url):
+        print("Starting....\n")
+        article={}
         datas=[]
-    def check():
-        r = requests.get(url,headers=headers)
-        soup = BeautifulSoup(r.content,'html.parser')
-        
+        try:
+            print("Trying to connect phase one network")
+            r = requests.get(url,headers=headers)
+            soup = BeautifulSoup(r.content,'html.parser')
+            print("Connected to phase one...\n Collecting the data.....\n")
+        except Exception as Error :
+            print("we cant connect now to the website check the connection and try again()...:)..")
+            print(Error)
 
         # each section of article 
         for i in soup.find_all('div',class_="mb-10"):
-            print("\n")
-            temp=[]
             # saving temp data 
-
+            temp=[]
             title = ""
+            title_link=""
             img_link=""
-            # scrapping title 
-            for j in i.find("a",class_="block mb-4 text-2xl text-black loop-item__title font-happy hover:text-black focus:text-black hover:underline focus:underline"):
-                temp.append(j.text)
-            title=' '.join(temp)
+
+
+            # scrapping title and Links
+            try:
+                for j in i.find_all("a",class_="block mb-4 text-2xl text-black loop-item__title font-happy hover:text-black focus:text-black hover:underline focus:underline"):
+                    temp.append(j.text)
+                    try:
+                        title_link=j['href']
+                    except Exception as Error:
+                        print("\nWe cant seek the title url...")
+                        print(Error)
+                        title_link=None
+                title=' '.join(temp)
+            except Exception as Error:
+                print("\nscarpping title not gone well...")
+                print(Error)
+                title=None
 
             # scarppint the image 
-            
-            for j in i.find_all("img") :
-                img_link=j["src"]
+            try:
+                for j in i.find_all("img") :
+                   img_link=j["src"]
+            except Exception as Error:
+                print("\nScrapping image not gone well...")
+                print(Error)
+                img_link=None
+            # scrapping time and para ()
+            TP=notifi.timeandpara(title_link)
+
+            # create dictionary with all the collected data 
+            article['Title']=title
+            article['TitleLink']=title_link
+            article['ImageLink']=img_link
+            article['Time']=TP[0]
+            article['Paragraph']=TP[1]           
+
+            datas.append(article)
+
+        # converts to json and prints it
+        j=json.dumps(datas,indent=2)
+        print("\nDatas converted to JSON and printin it.....\n\n")
+        print(j)
 
 
-            # scarpping  the links
-            
+    # function to get data from from each title page and retrive para and time stamp 
+    def timeandpara(url):
+        try:
+            print("\nPhase two starts executing....")
+            r = requests.get(url,headers=headers)
+            soup = BeautifulSoup(r.content,'html.parser')
+            print("\nPahse two connected.....")
+        except Exception as Error:
+            print("\nThere was error in phase two execution...\nPlease try again or check you have stable network connection.....")
+            print(Error)
 
-            # print temp data 
+        # find the posted date and time
+        try:
+            for i in soup.find_all('time'):
+                time = i.text
+                break;
+        except Exception as Error:
+            print("\nFinding time in second phase not gone well \n We assigning None to it")
+            print(Error)
+        # find the first para of the ariticle 
+        try:
+            for i in soup.find_all('p'):
+                para =i.text
+                break;
+        except Exception as Error:
+            print("\nWe can't seek paragraph in article please retry...")
+            print(Error)
+            para =None
 
+        # return the values 
+        return time,para
 
-
-            # print("Title: ",title,"\nImage Link: ",img_link)
-        
-        
-notifi.check()
+notifi.check(url)
